@@ -20,4 +20,4 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install requests beautifulsoup4
-      - run: python kicktipp_tipper.py debug
+      - run: python kicktipp_tipper.py list
