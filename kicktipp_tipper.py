@@ -204,17 +204,22 @@ def fetch_matches(session: requests.Session, community: str,
         cells = row.find_all("td")
         texts = [c.get_text(" ", strip=True) for c in cells]
 
-        # Datumszelle als Anker finden (sonst Position 0 annehmen)
-        anchor = 0
-        for i, txt in enumerate(texts):
+        # Datum/Anpfiff aus der Zelle holen, die wie ein Termin aussieht
+        date_text = ""
+        for txt in texts:
             if _DT_RE.search(txt) or _TIME_RE.search(txt):
-                anchor = i
+                date_text = txt
                 break
-        kickoff = parse_kickoff(texts[anchor] if texts else "", last_dt)
+        kickoff = parse_kickoff(date_text, last_dt)
         last_dt = kickoff or last_dt
 
-        home = texts[anchor + 1] if len(texts) > anchor + 1 else ""
-        away = texts[anchor + 2] if len(texts) > anchor + 2 else ""
+        # Teams = die ersten beiden Textzellen, die weder Datum noch Trenner sind
+        teams = [t for t in texts
+                 if t
+                 and not (_DT_RE.search(t) or _TIME_RE.search(t))
+                 and not re.fullmatch(r"[\s:\-–—xX]*", t)]
+        home = teams[0] if teams else ""
+        away = teams[1] if len(teams) > 1 else ""
 
         gast_in = row.find("input", id=lambda x: x and x.endswith("_gastTipp"))
         matches.append(Match(
