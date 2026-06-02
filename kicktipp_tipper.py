@@ -457,6 +457,42 @@ def cmd_watch(args):
         time.sleep(interval)
 
 
+def cmd_debug(args):
+    """Diagnose: zeigt, was die Tippabgabe-Seite wirklich liefert."""
+    session = new_session()
+    ensure_session(session)
+    url = tippabgabe_url(get_community(args), args.matchday)
+    resp = session.get(url, timeout=30)
+    soup = BeautifulSoup(resp.text, "html.parser")
+
+    print("Angeforderte URL:", url)
+    print("Endgültige URL:  ", resp.url)
+    print("Status:", resp.status_code, "| Seitenlänge:", len(resp.text))
+    title = soup.find("title")
+    print("Seitentitel:", title.get_text(strip=True) if title else "-")
+
+    forms = soup.find_all("form")
+    print(f"Formulare: {len(forms)} | actions:", [f.get("action") for f in forms][:5])
+
+    inputs = soup.find_all("input")
+    print(f"Input-Felder gesamt: {len(inputs)}")
+    interesting = [(i.get("name"), i.get("id"), i.get("type")) for i in inputs
+                   if (i.get("name") and "tipp" in i.get("name").lower())
+                   or (i.get("id") and "tipp" in i.get("id").lower())]
+    print(f"Felder mit 'tipp' im Namen/ID: {len(interesting)}")
+    for name, iid, typ in interesting[:20]:
+        print(f"   name={name!r}  id={iid!r}  type={typ!r}")
+
+    low = resp.text.lower()
+    if "kennung" in low or "passwort" in low:
+        print("WARNUNG: Die Seite enthält ein Login-Formular -> vermutlich nicht "
+              "eingeloggt oder kein Zugriff auf diese Community.")
+
+    ths = [th.get_text(" ", strip=True) for th in soup.find_all("th")]
+    if ths:
+        print("Tabellenköpfe:", ths[:12])
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Kicktipp Auto-Tipper mit echten Quoten")
     p.add_argument("--community", help="Tipprunde (sonst KICKTIPP_COMMUNITY)")
@@ -465,6 +501,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     lp = sub.add_parser("list", help="Spiele + erkannte Quoten/Tipps anzeigen")
     lp.set_defaults(func=cmd_list)
+
+    dp = sub.add_parser("debug", help="Diagnose der Tippabgabe-Seite")
+    dp.set_defaults(func=cmd_debug)
 
     rp = sub.add_parser("run", help="Tipps im Fenster vor Anpfiff abgeben")
     rp.add_argument("--lead", default="3h", help="Zeitfenster vor Anpfiff (z. B. 90m, 3h)")
