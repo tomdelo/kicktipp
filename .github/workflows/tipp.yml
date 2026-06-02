@@ -2,23 +2,22 @@ name: Kicktipp Auto-Tipp
 
 on:
   schedule:
-    # Alle 15 Minuten (Zeitangabe in UTC). Das Tool tippt nur Spiele,
-    # die im Zeitfenster vor Anpfiff liegen (--lead), der Rest wird ignoriert.
-    - cron: "*/15 * * * *"
-  workflow_dispatch: {}   # zusätzlich manuell startbar (Knopf in GitHub)
+    - cron: "*/15 * * * *"   # alle 15 Minuten (UTC); getippt wird nur im Fenster vor Anpfiff
+  workflow_dispatch: {}        # manueller Start-Knopf
 
 jobs:
   tippen:
     runs-on: ubuntu-latest
     env:
-      TZ: Europe/Berlin                                  # Anpfiffzeiten = deutsche Zeit
+      TZ: Europe/Berlin
       KICKTIPP_EMAIL: ${{ secrets.KICKTIPP_EMAIL }}
       KICKTIPP_PASSWORD: ${{ secrets.KICKTIPP_PASSWORD }}
       KICKTIPP_COMMUNITY: ${{ secrets.KICKTIPP_COMMUNITY }}
+      ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install requests beautifulsoup4
-      - run: python kicktipp_tipper.py run --lead 3h --auto-odds
+      - run: python kicktipp_tipper.py run --lead 3h
