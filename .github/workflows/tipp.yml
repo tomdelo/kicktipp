@@ -20,5 +20,5 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install requests beautifulsoup4
-      - run: python kicktipp_tipper.py run --lead 3h --community wm26mv
-      - run: python kicktipp_tipper.py run --lead 3h --community wm-2026-klinsmannserben
+      - run: python kicktipp_tipper.py --community wm26mv run --lead 3h
+      - run: python kicktipp_tipper.py --community wm-2026-klinsmannserben run --lead 3h
